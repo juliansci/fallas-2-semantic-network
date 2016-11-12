@@ -1,0 +1,7 @@
+Persona
+Cuerpo
+Ropa
+Sombrero
+Holmes
+Hombre
+Chaqueta

@@ -1,0 +1,6 @@
+Persona - tiene_un - Cuerpo
+Persona - viste - Ropa
+Sombrero - es_un - Ropa
+Holmes - es_un - Hombre
+Hombre - es_un - Persona
+Chaqueta - es_un - Ropa

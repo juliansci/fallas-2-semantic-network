@@ -1,5 +1,12 @@
 package com.fiuba.fallas.dos.sn.main;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
 import com.orientechnologies.common.util.OCallable;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
 import com.tinkerpop.blueprints.Vertex;
@@ -12,21 +19,65 @@ import com.tinkerpop.blueprints.impls.orient.OrientVertexType;
 import java.util.HashMap;
 import java.util.Map;
 
+class EdgeFromFile {
+    String out;
+    String in;
+    String label;
+}
+
 public class SemanticNetworkMain {
 
+    private static List<String> vertexesFromFile;
+    private static List<EdgeFromFile> edgesFromFile;
     private static Map<String, Vertex> vertexes;
     private static Map<String, OrientEdge> edges;
     private static OrientGraphFactory ogf;
 
     public static void main(String[] args) {
+        loadVertexes();
+        loadEdges();
         OrientGraph og = initOg();
-        System.out.println("Cant vertices inicio: " + og.countVertices());
         initVertexes(og);
-        System.out.println("Cant vertices desp agregar vertices: " + og.countVertices());
-        System.out.println("Cant aristas antes agregar aristas: " + og.countEdges());
         initEdges(og);
-        System.out.println("Cant aristas desp agregar aristas: " + og.countEdges());
+    }
 
+    private static void loadVertexes() {
+        vertexesFromFile = new ArrayList<>();
+        String fileName = "./src/main/resources/Vertexes.txt";
+        try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
+            stream.forEach((line)->{
+                vertexesFromFile.add(line.trim());
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Nodos:");
+        for (String vertex : vertexesFromFile) {
+            System.out.println(vertex);
+        }
+        System.out.println();
+    }
+
+    private static void loadEdges() {
+        edgesFromFile = new ArrayList<>();
+        String fileName = "./src/main/resources/Edges.txt";
+        try (Stream<String> stream = Files.lines(Paths.get(fileName))) {
+            stream.forEach((line)->{
+                String[] parsedLine = line.split("-");
+                EdgeFromFile edge = new EdgeFromFile();
+                edge.out = parsedLine[0].trim();
+                edge.label = parsedLine[1].trim();
+                edge.in = parsedLine[2].trim();
+                edgesFromFile.add(edge);
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Aristas:");
+        for (EdgeFromFile e : edgesFromFile) {
+            System.out.println(e.out + " -> " + e.label + " -> " + e.in);
+        }
+        System.out.println();
     }
 
     private static OrientGraph initOg() {
@@ -42,30 +93,35 @@ public class SemanticNetworkMain {
             }
 
             private void initVertexType(OrientGraph og) {
-                OrientVertexType vertexTypePersona = og.getVertexType("Persona");
-                OrientVertexType vertexTypeCuerpo = og.getVertexType("Cuerpo");
-                OrientVertexType vertexTypeRopa = og.getVertexType("Ropa");
-                if (vertexTypePersona != null) {
-                    og.dropVertexType("Persona");
+                for (String vertex : vertexesFromFile) {
+                    OrientVertexType vertexType = og.getVertexType(vertex);
+                    if (vertexType != null) {
+                        og.dropVertexType(vertex);
+                    }
                 }
-                if (vertexTypeCuerpo != null) {
-                    og.dropVertexType("Cuerpo");
+                List<String> addedVertexs = new ArrayList<>();
+                for (String vertex : vertexesFromFile) {
+                    if (!addedVertexs.contains(vertex)) {
+                        og.createVertexType(vertex);
+                    }
+                    addedVertexs.add(vertex);
                 }
-                if (vertexTypeRopa != null) {
-                    og.dropVertexType("Ropa");
-                }
-
-                og.createVertexType("Persona");
-                og.createVertexType("Cuerpo");
-                og.createVertexType("Ropa");
             }
 
             private void initEdgeType(OrientGraph og) {
-                OrientEdgeType edgeTypeRelacion = og.getEdgeType("Relacion");
-                if (edgeTypeRelacion != null) {
-                    og.dropEdgeType("Relacion");
+                for (EdgeFromFile e : edgesFromFile) {
+                    OrientEdgeType edgeType = og.getEdgeType(e.label);
+                    if (edgeType != null) {
+                        og.dropEdgeType(e.label);
+                    }
                 }
-                og.createEdgeType("Relacion");
+                List<String> addedLabels = new ArrayList<>();
+                for (EdgeFromFile e : edgesFromFile) {
+                    if (!addedLabels.contains(e.label)) {
+                        og.createEdgeType(e.label);
+                    }
+                    addedLabels.add(e.label);
+                }
             }
         });
         return og;
@@ -73,34 +129,20 @@ public class SemanticNetworkMain {
 
     private static void initVertexes(OrientGraph og) {
         vertexes = new HashMap<>();
-        Vertex vPersona = og.addVertex("class:Persona");
-        vPersona.setProperty("value", "Persona");
-        Vertex vCuerpo = og.addVertex("class:Cuerpo");
-        vCuerpo.setProperty("value", "Cuerpo");
-        Vertex vRopa = og.addVertex("class:Ropa");
-        vRopa.setProperty("value", "Ropa");
-        Vertex vSombrero = og.addVertex("class:Ropa");
-        vSombrero.setProperty("value", "Sombrero");
-        vertexes.put(vPersona.getProperty("value").toString(), vPersona);
-        vertexes.put(vCuerpo.getProperty("value").toString(), vCuerpo);
-        vertexes.put(vRopa.getProperty("value").toString(), vRopa);
-        vertexes.put(vSombrero.getProperty("value").toString(), vSombrero);
+        for (String vertexAsString : vertexesFromFile) {
+            Vertex vertex = og.addVertex("class:" + vertexAsString);
+            vertex.setProperty("value", vertexAsString);
+            vertexes.put(vertex.getProperty("value").toString(), vertex);
+        }
         og.commit();
     }
 
     private static void initEdges(OrientGraph og) {
         edges = new HashMap<>();
-        OrientEdge ePersonaCuerpo = og.addEdge(null, vertexes.get("Persona"), vertexes.get("Cuerpo"), "Relacion");
-        ePersonaCuerpo.setProperty("value", "tiene-un");
-        OrientEdge ePersonaRopa = og.addEdge(null, vertexes.get("Persona"), vertexes.get("Ropa"), "Relacion");
-        ePersonaRopa.setProperty("value", "viste");
-        OrientEdge eRopaSombrero = og.addEdge(null, vertexes.get("Ropa"), vertexes.get("Sombrero"), "Relacion");
-        eRopaSombrero.setProperty("value", "es-un");
-
-        edges.put("PersonaCuerpo", ePersonaCuerpo);
-        edges.put("PersonaRopa", ePersonaRopa);
-        edges.put("RopaSombrero", eRopaSombrero);
+        for (EdgeFromFile e : edgesFromFile) {
+            OrientEdge edge = og.addEdge(null, vertexes.get(e.out), vertexes.get(e.in), e.label);
+            edges.put(e.out + e.in, edge);
+        }
         og.commit();
     }
-
 }
