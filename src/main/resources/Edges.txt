@@ -4,3 +4,15 @@ Sombrero - es_un - Ropa
 Holmes - es_un - Hombre
 Hombre - es_un - Persona
 Chaqueta - es_un - Ropa
+Wilson - es_un - Hombre
+Wilson - tiene_un - Tatuaje
+Tatuaje - solo_hecho_en - China
+Tatuaje - esta_en - Brazo
+Brazo - tiene_un - Codo
+Manga - tiene_un - Codo
+Chaqueta - tiene_un - Manga
+Manga - tiene_un - PunioDerecho
+PunioDerecho - estado - GastadoYBrillante
+GastadoYBrillante - causa - Escribir
+Mano - estado - Grande
+Grande - causa - Trabajo
