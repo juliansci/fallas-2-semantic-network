@@ -1,0 +1,6 @@
+1. Descargar orientdb
+2. En $ORIENTDB_HOME/bin/ arrancar ./server.sh
+3. En $ORIENTDB_HOME/config/ editar archivo orientdb-server-config.xml y agregar esto dentro de <users> (o el usuario que quieran):  <user password="fallas123" name="fallas" resources="*"/>
+4. Arrancar devuelta el server, y entrar en la direccion (creo que es el puerto por defecto, sino al arrancar el server te dice cual es): http://localhost:2480/studio/
+5. Crear la base de datos fallas_db
+6. Listo para correr el programita
